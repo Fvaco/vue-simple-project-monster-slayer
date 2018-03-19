@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Monster Slayer</title>
+    <script src="https://npmcdn.com/vue/dist/vue.js"></script>
+    <link rel="stylesheet" href="css/foundation.min.css">
+    <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div id="app">
+    <section class="row">
+        <div class="small-6 columns">
+            <h1 class="text-center">YOU</h1>
+            <div class="healthbar">
+                <div class="healthbar text-center" :style="healthBarStyle.player">
+                    {{ game.player.health }}
+                </div>
+            </div>
+        </div>
+        <div class="small-6 columns">
+            <h1 class="text-center">MONSTER</h1>
+            <div class="healthbar">
+                <div class="healthbar text-center" :style="healthBarStyle.monster">
+                    {{game.monster.health}}
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="row controls" v-if="!game.running">
+        <div class="small-12 columns">
+            <button id="start-game" @click="newGame()">START NEW GAME</button>
+        </div>
+    </section>
+    <section class="row controls" v-else>
+        <div class="small-12 columns">
+            <button id="attack" @click="attackRound()">ATTACK</button>
+            <button id="special-attack" @click="specialAttackRound()">SPECIAL ATTACK</button>
+            <button id="heal" @click="healRound()">HEAL</button>
+            <button id="give-up" @click="game.running = false">GIVE UP</button>
+        </div>
+    </section>
+    <section class="row log" v-if="game.running && game.log.length > 0">
+        <div class="small-12 columns">
+            <ul>
+                <li v-for="log in game.log">
+                    <div class="player-turn">{{log.player}}</div>
+                    <div class="monster-turn">{{log.monster}}</div>
+                </li>
+            </ul>
+        </div>
+    </section>
+</div>
+</body>
+</html>
+<script>
+    new Vue({
+        el: "#app",
+        data() {
+            return {
+                game: {
+                    log: [],
+                    running: false,
+                    player: {
+                        health: 100
+                    },
+                    monster: {
+                        health: 100
+                    }
+                }
+            }
+        },
+        watch: {
+            playerHealth(newValue) {
+                if (newValue > 100) this.game.player.health = 100;
+                if (newValue <= 0) {
+                    confirm("You lose :(") ? this.game.running = false : null;
+                }
+            },
+            monsterHealth(newValue) {
+                if (newValue > 100) this.game.monster.health = 100;
+                if (newValue <= 0) {
+                    confirm("You win :)") ? this.game.running = false : null;
+                }
+            }
+        },
+        computed: {
+            playerHealth() {
+                return this.game.player.health;
+            },
+            monsterHealth() {
+                return this.game.monster.health;
+            },
+
+            healthBarStyle() {
+                return {
+                    player: {
+                        backgroundColor: this.game.player.health < 50 ? (this.game.player.health < 20 ? 'indianred' : "darkorange") : 'green',
+                        margin: 0,
+                        color: 'white',
+                        width: this.game.player.health + '%'
+                    },
+                    monster: {
+                        backgroundColor: this.game.monster.health < 50 ? (this.game.monster.health < 20 ? 'indianred' : "darkorange") : 'green',
+                        margin: 0,
+                        color: 'white',
+                        width: this.game.monster.health + '%'
+                    }
+                }
+            }
+        },
+        methods: {
+            newGame() {
+                this.game = {
+                    ...this.game,
+                    log: [],
+                    running: true,
+                    player: {
+                        health: 100
+                    },
+                    monster: {
+                        health: 100
+                    }
+                }
+            },
+            attackRound() {
+                let playerHit = this.calculateDamage(3, 10);
+                let monsterHit = this.monsterAttacks();
+                this.game.monster.health -= playerHit;
+
+                /*this.game.log.unshift({
+                    player: `Player hits monster for ${playerHit} PV`,
+                    monster: `Monster hits player for ${monsterHit} PV`
+                });*/
+
+                this.game.log = [
+                    {
+                        player: `Player hits monster for ${playerHit} PV`,
+                        monster: `Monster hits player for ${monsterHit} PV`
+                    },
+                    ...this.game.log
+                ]
+            },
+            specialAttackRound() {
+                let playerHit = this.calculateDamage(10, 20);
+                let monsterHit = this.monsterAttacks();
+                this.game.monster.health -= playerHit;
+                /*this.game.log.unshift({
+                    player: `Player hits monster for ${playerHit} PV`,
+                    monster: `Monster hits player for ${monsterHit} PV`
+                });*/
+                this.game.log = [
+                    {
+                        player: `Player hits monster hard for ${playerHit} PV`,
+                        monster: `Monster hits player for ${monsterHit} PV`
+                    },
+                    ...this.game.log
+                ]
+            },
+            healRound() {
+                let playerHeal = this.calculateDamage(5, 15);
+                let monsterHit = this.monsterAttacks();
+                this.game.player.health += playerHeal;
+                /*this.game.log.unshift({
+                    player: `Player heals himself for ${playerHeal} PV`,
+                    monster: `Monster hits player for ${monsterHit} PV`
+                });*/
+
+                this.game.log = [
+                    {
+                        player: `Player heals himself for ${playerHeal} PV`,
+                        monster: `Monster hits player for ${monsterHit} PV`
+                    },
+                    ...this.game.log
+                ]
+            },
+            calculateDamage(min, max) {
+                return Math.max(Math.floor((Math.random() * max) + 1), min);
+            },
+            monsterAttacks() {
+                let monsterHit = this.calculateDamage(5, 12);
+                this.game.player.health -= monsterHit;
+                return monsterHit
+            }
+
+        }
+    })
+</script>
